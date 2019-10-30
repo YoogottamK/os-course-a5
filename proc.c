@@ -88,6 +88,10 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->ctime = ticks;
+  p->etime = -1;
+  p->rtime = 0;
+  p->priority = 60;
 
   release(&ptable.lock);
 
@@ -311,6 +315,51 @@ wait(void)
   }
 }
 
+int waitx(int * wtime, int * rtime) {
+    struct proc * p;
+    int havekids, pid;
+    struct proc * curproc = myproc();
+
+    acquire(&ptable.lock);
+
+    for(;;) {
+        havekids = 0;
+        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if(p->parent != curproc)
+                continue;
+            havekids = 1;
+
+            if(p->state == ZOMBIE) {
+                p->etime = ticks;
+                *rtime = p->rtime;
+                // wait time = total time - running time
+                *wtime = p->etime - p->ctime - p->rtime;
+                pid = p->pid;
+                kfree(p->kstack);
+                p->kstack = 0;
+                freevm(p->pgdir);
+                p->pid = 0;
+                p->parent = 0;
+                p->name[0] = 0;
+                p->killed = 0;
+                p->state = UNUSED;
+                // TODO: confirm this
+                // p->ctime = p->rtime = p->etime = 0;
+                p->priority = 0;
+                release(&ptable.lock);
+                return pid;
+            }
+        }
+
+        if(!havekids || curproc->killed) {
+            release(&ptable.lock);
+            return -1;
+        }
+
+        sleep(curproc, &ptable.lock);
+    }
+}
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -531,4 +580,16 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+void updateRuntime() {
+    struct proc *p;
+    acquire(&ptable.lock);
+
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->state == RUNNING)
+            p->rtime++;
+    }
+
+    release(&ptable.lock);
 }

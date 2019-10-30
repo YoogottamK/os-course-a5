@@ -49,6 +49,10 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  uint ctime;                  // Process creation time
+  uint etime;                  // Process end time
+  uint rtime;                  // Process total run time
+  uint priority;               // Priority of the process
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -56,3 +60,23 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+
+/*
+ * updateRuntime
+ *  This function gets called once per cpu clock tick
+ *  process variables are updated here
+ */
+void updateRuntime();
+
+/*
+ * proc_stat
+ *  New struct defined for getpinfo
+ *  syscall
+ */
+struct proc_stat {
+    int pid;                // PID of each process
+    float runtime;          // Use suitable unit of time
+    int num_run;            // number of time the process is executed
+    int current_queue;      // current assigned queue
+    int ticks[5];           // number of ticks each process has received at each of the 5 priority queue
+};
