@@ -90,7 +90,6 @@ sys_uptime(void)
   return xticks;
 }
 
-/*
 int sys_waitx(void) {
     int * wtime, * rtime;
 
@@ -101,6 +100,5 @@ int sys_waitx(void) {
 
     return waitx(wtime, rtime);
 }
-*/
 
 // TODO: add new syscall here
