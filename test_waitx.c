@@ -13,6 +13,6 @@ int main(int argc, char * argv[]) {
         int rtime, wtime;
         waitx(&wtime, &rtime);
 
-        printf(1, "%d %d\n", rtime, wtime);
+        printf(1, "rtime = %d\nwtime = %d\n", rtime, wtime);
     }
 }
