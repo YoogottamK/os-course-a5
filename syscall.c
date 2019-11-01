@@ -103,7 +103,7 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
-extern int sys_waitx(void);
+// extern int sys_waitx(void);
 // TODO: add new syscalls here
 
 static int (*syscalls[])(void) = {
@@ -128,7 +128,7 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
-[SYS_waitx]   sys_waitx,
+// [SYS_waitx]   sys_waitx,
 // TODO: add new syscalls here
 };
 
