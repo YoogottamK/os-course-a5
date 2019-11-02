@@ -251,6 +251,8 @@ exit(void)
   end_op();
   curproc->cwd = 0;
 
+  curproc->etime = ticks;
+
   acquire(&ptable.lock);
 
   // Parent might be sleeping in wait().
@@ -330,7 +332,6 @@ int waitx(int * wtime, int * rtime) {
             havekids = 1;
 
             if(p->state == ZOMBIE) {
-                p->etime = ticks;
                 *rtime = p->rtime;
                 // wait time = total time - running time
                 *wtime = p->etime - p->ctime - p->rtime;
