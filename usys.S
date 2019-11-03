@@ -30,4 +30,5 @@ SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
 SYSCALL(waitx)
+SYSCALL(set_priority)
 // TODO: add new syscall here

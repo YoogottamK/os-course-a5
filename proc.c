@@ -361,6 +361,20 @@ int waitx(int * wtime, int * rtime) {
     }
 }
 
+int set_priority(int priority) {
+    int oldPriority = myproc()->priority;
+
+    if(priority < 0 || priority > 100)
+        return oldPriority;
+
+
+    acquire(&ptable.lock);
+    myproc()->priority = priority;
+    release(&ptable.lock);
+
+    return oldPriority;
+}
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -404,6 +418,7 @@ scheduler(void)
     }
 #else
 #ifdef FCFS
+    // find the process with smallest ctime
     struct proc * minCTimeProc = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if(p->state == RUNNABLE) {
@@ -431,6 +446,9 @@ scheduler(void)
         // It should have changed its p->state before coming back.
         c->proc = 0;
     }
+#else
+#ifdef PBS
+#endif
 #endif
 #endif
     release(&ptable.lock);
