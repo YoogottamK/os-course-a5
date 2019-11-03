@@ -3,7 +3,7 @@
 #include "user.h"
 #include "fcntl.h"
 
-int main(int argc, char * argv[]) {
+int main() {
     int id = getpid();
     for(int i = 0; i < 10; i++) {
         printf(1, "pid: %d    %d\n", id, i);
