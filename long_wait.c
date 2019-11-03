@@ -5,6 +5,11 @@
 
 int main() {
     int id = getpid();
+
+#ifdef PBS
+    set_priority(id);
+#endif
+
     for(int i = 0; i < 10; i++) {
         printf(1, "pid: %d    %d\n", id, i);
 

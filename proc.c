@@ -92,6 +92,7 @@ found:
   p->etime = -1;
   p->rtime = 0;
   p->priority = 60;
+  p->nExec = 0;
 
   release(&ptable.lock);
 
@@ -459,7 +460,8 @@ void scheduler(void) {
                 if(!minPriorityProc) {
                     minPriorityProc = p;
                 } else {
-                    if(p->priority < minPriorityProc->priority)
+                    if(p->priority <= minPriorityProc->priority &&
+                            p->nExec <= minPriorityProc->nExec)
                         minPriorityProc = p;
                 }
             }
@@ -468,6 +470,7 @@ void scheduler(void) {
         // it might happen that it found no such process
         // qemu did weird stuff without this if condition
         if (minPriorityProc) {
+            minPriorityProc->nExec++;
             p = minPriorityProc;
             c->proc = p;
             switchuvm(p);
