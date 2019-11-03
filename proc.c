@@ -38,10 +38,10 @@ struct cpu*
 mycpu(void)
 {
   int apicid, i;
-  
+
   if(readeflags()&FL_IF)
     panic("mycpu called with interrupts enabled\n");
-  
+
   apicid = lapicid();
   // APIC IDs are not guaranteed to be contiguous. Maybe we should have
   // a reverse map, or reserve a register to store &cpus[i].
@@ -128,7 +128,7 @@ userinit(void)
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
   p = allocproc();
-  
+
   initproc = p;
   if((p->pgdir = setupkvm()) == 0)
     panic("userinit: out of memory?");
@@ -281,7 +281,7 @@ wait(void)
   struct proc *p;
   int havekids, pid;
   struct proc *curproc = myproc();
-  
+
   acquire(&ptable.lock);
   for(;;){
     // Scan through table looking for exited children.
@@ -375,13 +375,15 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
-  
+
   for(;;){
     // Enable interrupts on this processor.
     sti();
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+
+#ifdef RR
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
@@ -400,6 +402,37 @@ scheduler(void)
       // It should have changed its p->state before coming back.
       c->proc = 0;
     }
+#else
+#ifdef FCFS
+    struct proc * minCTimeProc = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if(p->state == RUNNABLE) {
+            if(!minCTimeProc) {
+                minCTimeProc = p;
+            } else {
+                if(p->ctime < minCTimeProc->ctime)
+                    minCTimeProc = p;
+            }
+        }
+    }
+
+    // it might happen that it found no such process
+    // qemu did weird stuff without this if condition
+    if (minCTimeProc) {
+        p = minCTimeProc;
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
+
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
+
+        // Process is done running for now
+        // It should have changed its p->state before coming back.
+        c->proc = 0;
+    }
+#endif
+#endif
     release(&ptable.lock);
 
   }
@@ -468,7 +501,7 @@ void
 sleep(void *chan, struct spinlock *lk)
 {
   struct proc *p = myproc();
-  
+
   if(p == 0)
     panic("sleep");
 
