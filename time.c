@@ -8,10 +8,7 @@ int main(int argc, char * argv[]) {
     int f = fork();
 
     if(f == 0) {
-        close(0);
-        close(1);
-        close(2);
-        exec(argv[1], argv);
+        exec(argv[1], argv + 1);
     } else {
         int rtime, wtime;
         waitx(&wtime, &rtime);
