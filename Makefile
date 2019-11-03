@@ -75,7 +75,12 @@ endif
 SCHED = RR # round robin by default
 ifeq ($(SCHEDULER),FCFS)
 	SCHED = FCFS
+else
+ifeq ($(SCHEDULER), PBS)
+	SCHED = PBS
 endif
+endif
+
 
 CC = $(TOOLPREFIX)gcc
 AS = $(TOOLPREFIX)gas

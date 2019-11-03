@@ -383,77 +383,113 @@ int set_priority(int priority) {
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
-void
-scheduler(void)
-{
-  struct proc *p;
-  struct cpu *c = mycpu();
-  c->proc = 0;
+void scheduler(void) {
+    struct proc *p;
+    struct cpu *c = mycpu();
+    c->proc = 0;
 
-  for(;;){
-    // Enable interrupts on this processor.
-    sti();
+#ifdef PBS
+    // should have init with -1 since loop starts with procIndex + 1
+    // but loop exit condition is when i == procIndex, which will never
+    // happen with -1 initialization. So, we compromise only for the first
+    // ever pbs, which should be okay
+    //int procIndex = 0;
+#endif
 
-    // Loop over process table looking for process to run.
-    acquire(&ptable.lock);
+    for(;;) {
+        // Enable interrupts on this processor.
+        sti();
+
+        // Loop over process table looking for process to run.
+        acquire(&ptable.lock);
 
 #ifdef RR
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
+        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if(p->state != RUNNABLE)
+                continue;
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
+            // Switch to chosen process.  It is the process's job
+            // to release ptable.lock and then reacquire it
+            // before jumping back to us.
+            c->proc = p;
+            switchuvm(p);
+            p->state = RUNNING;
 
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
+            swtch(&(c->scheduler), p->context);
+            switchkvm();
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
-    }
+            // Process is done running for now.
+            // It should have changed its p->state before coming back.
+            c->proc = 0;
+        }
 #else
 #ifdef FCFS
-    // find the process with smallest ctime
-    struct proc * minCTimeProc = 0;
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if(p->state == RUNNABLE) {
-            if(!minCTimeProc) {
-                minCTimeProc = p;
-            } else {
-                if(p->ctime < minCTimeProc->ctime)
+        struct proc * minCTimeProc = 0;
+        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if(p->state == RUNNABLE) {
+                if(!minCTimeProc) {
                     minCTimeProc = p;
+                } else {
+                    if(p->ctime < minCTimeProc->ctime)
+                        minCTimeProc = p;
+                }
             }
         }
-    }
 
-    // it might happen that it found no such process
-    // qemu did weird stuff without this if condition
-    if (minCTimeProc) {
-        p = minCTimeProc;
-        c->proc = p;
-        switchuvm(p);
-        p->state = RUNNING;
+        // it might happen that it found no such process
+        // qemu did weird stuff without this if condition
+        if (minCTimeProc) {
+            p = minCTimeProc;
+            c->proc = p;
+            switchuvm(p);
+            p->state = RUNNING;
 
-        swtch(&(c->scheduler), p->context);
-        switchkvm();
+            swtch(&(c->scheduler), p->context);
+            switchkvm();
 
-        // Process is done running for now
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
-    }
+            // Process is done running for now
+            // It should have changed its p->state before coming back.
+            c->proc = 0;
+        }
 #else
 #ifdef PBS
-#endif
-#endif
-#endif
-    release(&ptable.lock);
+        struct proc * minPriorityProc = 0;
+        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if(p->state == RUNNABLE) {
+                if(!minPriorityProc) {
+                    minPriorityProc = p;
+                } else {
+                    if(p->priority < minPriorityProc->priority)
+                        minPriorityProc = p;
+                }
+            }
+        }
 
-  }
+        // it might happen that it found no such process
+        // qemu did weird stuff without this if condition
+        if (minPriorityProc) {
+            p = minPriorityProc;
+            c->proc = p;
+            switchuvm(p);
+            p->state = RUNNING;
+
+            swtch(&(c->scheduler), p->context);
+            switchkvm();
+
+            // Process is done running for now
+            // It should have changed its p->state before coming back.
+            c->proc = 0;
+        }
+#else
+#ifdef MLFQ
+        // TODO: finish this
+#endif
+#endif
+#endif
+#endif
+        release(&ptable.lock);
+
+    }
 }
 
 // Enter scheduler.  Must hold only ptable.lock
