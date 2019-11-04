@@ -505,7 +505,51 @@ void scheduler(void) {
         }
 #else
 #ifdef MLFQ
-        // TODO: finish this
+        struct proc * minPriorityProc = 0;
+        for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+            if(p->state == RUNNABLE) {
+                if(!minPriorityProc) {
+                    minPriorityProc = p;
+                } else {
+                    if((p->priority < minPriorityProc->priority) ||
+                            (p->priority <= minPriorityProc->priority &&
+                                p->nExec <= minPriorityProc->nExec))
+                        minPriorityProc = p;
+                }
+            }
+        }
+
+        // it might happen that it found no such process
+        // qemu did weird stuff without this if condition
+        if (minPriorityProc) {
+            minPriorityProc->nExec++;
+            int q = minPriorityProc->queue;
+            int t = minPriorityProc->ticksGiven[q];
+            minPriorityProc->ticksGiven[q]++;
+
+            if(t == (1 << q)) {
+                if(q < NQUE) {
+                    minPriorityProc->ticksGiven[q] = minPriorityProc->ticksGiven[q+1] = 0;
+
+                    minPriorityProc->queue = (++minPriorityProc->priority);
+                } else {
+                    minPriorityProc->ticksGiven[q] = minPriorityProc->ticksGiven[0] = 0;
+                    minPriorityProc->queue = minPriorityProc->priority = 0;
+                }
+            }
+
+            p = minPriorityProc;
+            c->proc = p;
+            switchuvm(p);
+            p->state = RUNNING;
+
+            swtch(&(c->scheduler), p->context);
+            switchkvm();
+
+            // Process is done running for now
+            // It should have changed its p->state before coming back.
+            c->proc = 0;
+        }
 #endif
 #endif
 #endif
