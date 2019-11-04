@@ -452,8 +452,9 @@ void scheduler(void) {
                 if(!minPriorityProc) {
                     minPriorityProc = p;
                 } else {
-                    if(p->priority <= minPriorityProc->priority &&
-                            p->nExec <= minPriorityProc->nExec)
+                    if((p->priority < minPriorityProc->priority) ||
+                            (p->priority <= minPriorityProc->priority &&
+                                p->nExec <= minPriorityProc->nExec))
                         minPriorityProc = p;
                 }
             }
