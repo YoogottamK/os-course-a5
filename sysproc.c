@@ -109,4 +109,13 @@ int sys_set_priority(void) {
     return set_priority(priority);
 }
 
+int sys_getpinfo(void) {
+    struct proc_stat * p;
+
+    if(argptr(0, (void*)&p, sizeof(p)))
+        return -1;
+
+    return getpinfo(p);
+}
+
 // TODO: add new syscall here

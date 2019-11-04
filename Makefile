@@ -78,6 +78,10 @@ ifeq ($(SCHEDULER),FCFS)
 else
 ifeq ($(SCHEDULER), PBS)
 	SCHED = PBS
+else
+ifeq ($(SCHEDULER), MLFQ)
+	SCHED = MLFQ
+endif
 endif
 endif
 

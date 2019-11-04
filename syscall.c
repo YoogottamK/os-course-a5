@@ -105,6 +105,7 @@ extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_waitx(void);
 extern int sys_set_priority(void);
+extern int sys_getpinfo(void);
 // TODO: add new syscalls here
 
 static int (*syscalls[])(void) = {
@@ -131,6 +132,7 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_waitx]   sys_waitx,
 [SYS_set_priority] sys_set_priority,
+[SYS_getpinfo] sys_getpinfo,
 // TODO: add new syscalls here
 };
 

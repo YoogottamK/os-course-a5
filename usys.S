@@ -31,4 +31,5 @@ SYSCALL(sleep)
 SYSCALL(uptime)
 SYSCALL(waitx)
 SYSCALL(set_priority)
+SYSCALL(getpinfo)
 // TODO: add new syscall here

@@ -73,51 +73,57 @@ myproc(void) {
 static struct proc*
 allocproc(void)
 {
-  struct proc *p;
-  char *sp;
+    struct proc *p;
+    char *sp;
 
-  acquire(&ptable.lock);
+    acquire(&ptable.lock);
 
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == UNUSED)
-      goto found;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+        if(p->state == UNUSED)
+            goto found;
 
-  release(&ptable.lock);
-  return 0;
+    release(&ptable.lock);
+    return 0;
 
 found:
-  p->state = EMBRYO;
-  p->pid = nextpid++;
-  p->ctime = ticks;
-  p->etime = -1;
-  p->rtime = 0;
-  p->priority = 60;
-  p->nExec = 0;
+    p->state = EMBRYO;
+    p->pid = nextpid++;
+    p->ctime = ticks;
+    p->etime = -1;
+    p->rtime = 0;
+    p->priority = 60;
+    p->nExec = 0;
+    p->queue = -1;
+    for(int i = 0; i < NQUE; i++) p->ticksGiven[i] = -1;
+#ifdef MLFQ
+    p->queue = 0;
+    for(int i = 0; i < NQUE; i++) p->ticksGiven[i] = 0;
+#endif
 
-  release(&ptable.lock);
+    release(&ptable.lock);
 
-  // Allocate kernel stack.
-  if((p->kstack = kalloc()) == 0){
-    p->state = UNUSED;
-    return 0;
-  }
-  sp = p->kstack + KSTACKSIZE;
+    // Allocate kernel stack.
+    if((p->kstack = kalloc()) == 0){
+        p->state = UNUSED;
+        return 0;
+    }
+    sp = p->kstack + KSTACKSIZE;
 
-  // Leave room for trap frame.
-  sp -= sizeof *p->tf;
-  p->tf = (struct trapframe*)sp;
+    // Leave room for trap frame.
+    sp -= sizeof *p->tf;
+    p->tf = (struct trapframe*)sp;
 
-  // Set up new context to start executing at forkret,
-  // which returns to trapret.
-  sp -= 4;
-  *(uint*)sp = (uint)trapret;
+    // Set up new context to start executing at forkret,
+    // which returns to trapret.
+    sp -= 4;
+    *(uint*)sp = (uint)trapret;
 
-  sp -= sizeof *p->context;
-  p->context = (struct context*)sp;
-  memset(p->context, 0, sizeof *p->context);
-  p->context->eip = (uint)forkret;
+    sp -= sizeof *p->context;
+    p->context = (struct context*)sp;
+    memset(p->context, 0, sizeof *p->context);
+    p->context->eip = (uint)forkret;
 
-  return p;
+    return p;
 }
 
 //PAGEBREAK: 32
@@ -363,17 +369,38 @@ int waitx(int * wtime, int * rtime) {
 }
 
 int set_priority(int priority) {
+    if(!myproc())
+        panic("set_priority called with a null process\n");
+
     int oldPriority = myproc()->priority;
 
     if(priority < 0 || priority > 100)
         return oldPriority;
 
-
     acquire(&ptable.lock);
     myproc()->priority = priority;
     release(&ptable.lock);
 
+    if(myproc()->state == RUNNING)
+        yield();
+
     return oldPriority;
+}
+
+int getpinfo(struct proc_stat * p) {
+    if(!myproc())
+        panic("getpinfo called with a null process\n");
+
+    struct proc * myProcess = myproc();
+
+    p->pid = myProcess->pid;
+    p->runtime = myProcess->rtime;
+    p->num_run = myProcess->nExec;
+    p->current_queue = myProcess->queue;
+    for(int i = 0; i < NQUE; i++)
+        p->ticks[i] = myProcess->ticksGiven[i];
+
+    return 0;
 }
 
 //PAGEBREAK: 42
@@ -484,7 +511,6 @@ void scheduler(void) {
 #endif
 #endif
         release(&ptable.lock);
-
     }
 }
 

@@ -54,6 +54,8 @@ struct proc {
   uint rtime;                  // Process total run time
   uint priority;               // Priority of the process
   uint nExec;                  // Number of times it has executed
+  uint queue;                  // queue number in MLFQ
+  uint ticksGiven[NQUE];       // ticks given to the proc in each queue
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -79,5 +81,5 @@ struct proc_stat {
     float runtime;          // Use suitable unit of time
     int num_run;            // number of time the process is executed
     int current_queue;      // current assigned queue
-    int ticks[5];           // number of ticks each process has received at each of the 5 priority queue
+    int ticks[NQUE];        // number of ticks each process has received at each of the 5 priority queue
 };
