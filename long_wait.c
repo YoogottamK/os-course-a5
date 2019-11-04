@@ -7,7 +7,7 @@ int main() {
     int id = getpid();
 
 #ifdef PBS
-    set_priority(id);
+    set_priority(100 - id);
 #endif
 
     for(int i = 0; i < 10; i++) {
