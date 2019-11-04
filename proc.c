@@ -389,14 +389,6 @@ void scheduler(void) {
     struct cpu *c = mycpu();
     c->proc = 0;
 
-#ifdef PBS
-    // should have init with -1 since loop starts with procIndex + 1
-    // but loop exit condition is when i == procIndex, which will never
-    // happen with -1 initialization. So, we compromise only for the first
-    // ever pbs, which should be okay
-    //int procIndex = 0;
-#endif
-
     for(;;) {
         // Enable interrupts on this processor.
         sti();
