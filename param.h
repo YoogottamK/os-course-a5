@@ -12,6 +12,6 @@
 #define NBUF         (MAXOPBLOCKS*3)  // size of disk block cache
 #define FSSIZE       1000  // size of file system in blocks
 #define NQUE         5  // number of queues in MLFQ
-#define QLIMIT       NQUE * 1000
+#define QLIMIT       NQUE * 10000
 #define OLDAGE       100
 // TODO: correct these comments

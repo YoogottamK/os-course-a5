@@ -21,6 +21,7 @@ int main(void) {
         v++;
     */
 
+#ifdef MLFQ
     for(int i = 0; i < NQUE; i++) {
         mlfq[i].beg = 0;
         mlfq[i].end = -1;
@@ -28,6 +29,7 @@ int main(void) {
         for(int j = 0; j < QLIMIT; j++)
             mlfq[i].q[j] = 0;
     }
+#endif
 
     kinit1(end, P2V(4*1024*1024)); // phys page allocator
     kvmalloc();      // kernel page table
