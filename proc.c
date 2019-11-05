@@ -517,7 +517,6 @@ void scheduler(void) {
                 if(!selectedProc) continue;
 
                 if(selectedProc->state == RUNNABLE) {
-                    cprintf("Sending %s from q %d, state %d\n", selectedProc->name, q);
                     break;
                 } else {
                     append(&mlfq[q], delete(&mlfq[q]));
@@ -535,6 +534,10 @@ void scheduler(void) {
             p->state = RUNNING;
 
             swtch(&(c->scheduler), p->context);
+
+            if(p->state == SLEEPING)
+                append(&mlfq[p->queue], delete(&mlfq[p->queue]));
+
             switchkvm();
 
             // Process is done running for now
@@ -579,11 +582,6 @@ sched(void)
 void yield(void) {
     acquire(&ptable.lock);  //DOC: yieldlock
     myproc()->state = RUNNABLE;
-#ifdef MLFQ
-    //int q = myproc()->queue;
-    //cprintf("[cpu%d] going to yield, q: %d\n", mycpu()->apicid, q);
-    //append(&mlfq[q], delete(&mlfq[q]));
-#endif
     sched();
     release(&ptable.lock);
 }
@@ -697,37 +695,59 @@ kill(int pid)
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
 // No lock to avoid wedging a stuck machine further.
-void
-procdump(void)
-{
-  static char *states[] = {
-  [UNUSED]    "unused",
-  [EMBRYO]    "embryo",
-  [SLEEPING]  "sleep ",
-  [RUNNABLE]  "runble",
-  [RUNNING]   "run   ",
-  [ZOMBIE]    "zombie"
-  };
-  int i;
-  struct proc *p;
-  char *state;
-  uint pc[10];
+void procdump(void) {
+    static char *states[] = {
+        [UNUSED]    "unused",
+        [EMBRYO]    "embryo",
+        [SLEEPING]  "sleep ",
+        [RUNNABLE]  "runble",
+        [RUNNING]   "run   ",
+        [ZOMBIE]    "zombie"
+    };
+    int i;
+    struct proc *p;
+    char *state;
+    uint pc[10];
 
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->state == UNUSED)
-      continue;
-    if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
-      state = states[p->state];
-    else
-      state = "???";
-    cprintf("%d %s %s", p->pid, state, p->name);
-    if(p->state == SLEEPING){
-      getcallerpcs((uint*)p->context->ebp+2, pc);
-      for(i=0; i<10 && pc[i] != 0; i++)
-        cprintf(" %p", pc[i]);
+    cprintf("\nProcess status:\n");
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state == UNUSED)
+            continue;
+        if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
+            state = states[p->state];
+        else
+            state = "???";
+        cprintf("%d %s %s", p->pid, state, p->name);
+        if(p->state == SLEEPING){
+            getcallerpcs((uint*)p->context->ebp+2, pc);
+            for(i=0; i<10 && pc[i] != 0; i++)
+                cprintf(" %p", pc[i]);
+        }
+#ifdef MLFQ
+        cprintf(" queue: %d", p->queue);
+#endif
+        cprintf("\n");
     }
-    cprintf("\n");
-  }
+
+#ifdef MLFQ
+    cprintf("\nQueue status:\n");
+    for(int q = 0; q < NQUE; q++) {
+        int beg = mlfq[q].beg,
+            end = mlfq[q].end;
+
+        cprintf("Queue %d(%d -> %d): ", q, beg, end);
+
+        if(!size(&mlfq[q])) {
+            cprintf("empty\n");
+            continue;
+        }
+
+        for(int i = beg; i <= end; i++) {
+            cprintf("%d ", mlfq[q].q[i]->pid);
+        }
+        cprintf("\n");
+    }
+#endif
 }
 
 void updateRuntime() {
@@ -746,28 +766,63 @@ void updateRuntime() {
 // Queue functions
 
 void append(struct Queue * que, struct proc * p) {
+    //cprintf("Going to append to queue %d\n", p->queue);
+
     if(!que)
         panic("NULL queue given for append\n");
 
-    if(que->end == QLIMIT)
-        panic("MLFQ queue is full!\n");
+    if((que->beg == 0 && que->end == QLIMIT -1) &&
+            (que->end + 1 == que->beg))
+        panic("Appending to full queue :(\n");
 
-    que->q[++que->end] = p;
+    if(que->beg == -1) {
+        que->beg = que->end = 0;
+        que->q[0] = p;
+    } else if(que->end == QLIMIT - 1 && que->beg) {
+        que->end = 0;
+        que->q[que->end] = p;
+    } else {
+        que->end++;
+        que->q[que->end] = p;
+    }
+
+    //cprintf("Going to leave append function\n");
 }
 
 struct proc * delete(struct Queue * que) {
+    //cprintf("Going to delete\n");
+
     if(!que)
         panic("NULL queue given for deletion\n");
 
-    if(que->beg == que->end + 1)
+    if(que->beg == -1)
         panic("Deleting from empty MLFQ queue\n");
 
-    que->beg++;
-    return que->q[que->beg - 1];
+    struct proc * ret = que->q[que->beg];
+
+    if(que->beg == que->end) {
+        que->end = que->beg = -1;
+    } else if(que->beg == QLIMIT - 1) {
+        que->beg = 0;
+    } else {
+        que->beg++;
+    }
+
+    //cprintf("Deleted yay\n");
+    return ret;
 }
 
 int size(struct Queue * que) {
-    return que->end - que->beg + 1;
+    if(!que)
+        panic("NULL queue given for getting size\n");
+
+    if(que->beg == -1)
+        return 0;
+
+    if(que->end >= que->beg)
+        return 1 + que->end - que->beg;
+
+    return QLIMIT - que->beg + que->end;
 }
 
 // aging processes

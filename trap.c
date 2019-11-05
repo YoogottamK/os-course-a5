@@ -107,7 +107,7 @@ void trap(struct trapframe *tf) {
         p->ticksGiven[p->queue] = ticks - p->qEnterTime;
 
         int nextQ = p->queue == NQUE - 1 ? NQUE - 1 : p->queue + 1;
-        cprintf("Kicking out %d from queue %d to %d\n", p->pid, p->queue, nextQ);
+        cprintf("[cpu%d] Kicking out %d from queue %d to %d\n", mycpu()->apicid, p->pid, p->queue, nextQ);
         append(&mlfq[nextQ], delete(&mlfq[p->queue]));
         p->queue = nextQ;
         p->qEnterTime = ticks;

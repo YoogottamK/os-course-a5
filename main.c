@@ -23,8 +23,7 @@ int main(void) {
 
 #ifdef MLFQ
     for(int i = 0; i < NQUE; i++) {
-        mlfq[i].beg = 0;
-        mlfq[i].end = -1;
+        mlfq[i].beg = mlfq[i].end = -1;
         
         for(int j = 0; j < QLIMIT; j++)
             mlfq[i].q[j] = 0;
