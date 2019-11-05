@@ -33,87 +33,104 @@ idtinit(void)
 }
 
 //PAGEBREAK: 41
-void
-trap(struct trapframe *tf)
-{
-  if(tf->trapno == T_SYSCALL){
-    if(myproc()->killed)
-      exit();
-    myproc()->tf = tf;
-    syscall();
-    if(myproc()->killed)
-      exit();
-    return;
-  }
-
-  switch(tf->trapno){
-  case T_IRQ0 + IRQ_TIMER:
-    if(cpuid() == 0){
-      acquire(&tickslock);
-      ticks++;
-      updateRuntime();
-      wakeup(&ticks);
-      release(&tickslock);
+void trap(struct trapframe *tf) {
+    if(tf->trapno == T_SYSCALL){
+        if(myproc()->killed)
+            exit();
+        myproc()->tf = tf;
+        syscall();
+        if(myproc()->killed)
+            exit();
+        return;
     }
-    lapiceoi();
-    break;
-  case T_IRQ0 + IRQ_IDE:
-    ideintr();
-    lapiceoi();
-    break;
-  case T_IRQ0 + IRQ_IDE+1:
-    // Bochs generates spurious IDE1 interrupts.
-    break;
-  case T_IRQ0 + IRQ_KBD:
-    kbdintr();
-    lapiceoi();
-    break;
-  case T_IRQ0 + IRQ_COM1:
-    uartintr();
-    lapiceoi();
-    break;
-  case T_IRQ0 + 7:
-  case T_IRQ0 + IRQ_SPURIOUS:
-    cprintf("cpu%d: spurious interrupt at %x:%x\n",
-            cpuid(), tf->cs, tf->eip);
-    lapiceoi();
-    break;
 
-  //PAGEBREAK: 13
-  default:
-    if(myproc() == 0 || (tf->cs&3) == 0){
-      // In kernel, it must be our mistake.
-      cprintf("unexpected trap %d from cpu %d eip %x (cr2=0x%x)\n",
-              tf->trapno, cpuid(), tf->eip, rcr2());
-      panic("trap");
+    switch(tf->trapno){
+        case T_IRQ0 + IRQ_TIMER:
+            if(cpuid() == 0){
+                acquire(&tickslock);
+                ticks++;
+                updateRuntime();
+                wakeup(&ticks);
+                release(&tickslock);
+            }
+            lapiceoi();
+            break;
+        case T_IRQ0 + IRQ_IDE:
+            ideintr();
+            lapiceoi();
+            break;
+        case T_IRQ0 + IRQ_IDE+1:
+            // Bochs generates spurious IDE1 interrupts.
+            break;
+        case T_IRQ0 + IRQ_KBD:
+            kbdintr();
+            lapiceoi();
+            break;
+        case T_IRQ0 + IRQ_COM1:
+            uartintr();
+            lapiceoi();
+            break;
+        case T_IRQ0 + 7:
+        case T_IRQ0 + IRQ_SPURIOUS:
+            cprintf("cpu%d: spurious interrupt at %x:%x\n",
+                    cpuid(), tf->cs, tf->eip);
+            lapiceoi();
+            break;
+
+            //PAGEBREAK: 13
+        default:
+            if(myproc() == 0 || (tf->cs&3) == 0){
+                // In kernel, it must be our mistake.
+                cprintf("unexpected trap %d from cpu %d eip %x (cr2=0x%x)\n",
+                        tf->trapno, cpuid(), tf->eip, rcr2());
+                panic("trap");
+            }
+            // In user space, assume process misbehaved.
+            cprintf("pid %d %s: trap %d err %d on cpu %d "
+                    "eip 0x%x addr 0x%x--kill proc\n",
+                    myproc()->pid, myproc()->name, tf->trapno,
+                    tf->err, cpuid(), tf->eip, rcr2());
+            myproc()->killed = 1;
     }
-    // In user space, assume process misbehaved.
-    cprintf("pid %d %s: trap %d err %d on cpu %d "
-            "eip 0x%x addr 0x%x--kill proc\n",
-            myproc()->pid, myproc()->name, tf->trapno,
-            tf->err, cpuid(), tf->eip, rcr2());
-    myproc()->killed = 1;
-  }
 
-  // Force process exit if it has been killed and is in user space.
-  // (If it is still executing in the kernel, let it keep running
-  // until it gets to the regular system call return.)
-  if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)
-    exit();
+    // Force process exit if it has been killed and is in user space.
+    // (If it is still executing in the kernel, let it keep running
+    // until it gets to the regular system call return.)
+    if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)
+        exit();
 
-  // in FCFS, we don't force the process to give
-  // up the CPU
-  //
-  // Let it finish off whatever it's doing
-#ifndef FCFS
-  // Force process to give up CPU on clock tick.
-  // If interrupts were on while locks held, would need to check nlock.
-  if(myproc() && myproc()->state == RUNNING &&
-     tf->trapno == T_IRQ0+IRQ_TIMER)
-    yield();
+#ifdef MLFQ
+    struct proc * p = myproc();
+    if(p && (ticks - p->qEnterTime == (1 << p->queue))
+            && tf->trapno == T_IRQ0 + IRQ_TIMER) {
+        yield();
+        p->ticksGiven[p->queue] = ticks - p->qEnterTime;
+
+        int nextQ = p->queue == NQUE - 1 ? NQUE - 1 : p->queue + 1;
+        cprintf("Kicking out %d from queue %d to %d\n", p->pid, p->queue, nextQ);
+        append(&mlfq[nextQ], delete(&mlfq[p->queue]));
+        p->queue = nextQ;
+        p->qEnterTime = ticks;
+    }
+
+    ageProcesses();
 #endif
 
-  // Check if the process has been killed since we yielded
-  if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)
-    exit();
+    // in FCFS, we don't force the process to give
+    // up the CPU
+    //
+    // Let it finish off whatever it's doing
+#ifndef FCFS
+#ifndef MLFQ
+    // Force process to give up CPU on clock tick.
+    // If interrupts were on while locks held, would need to check nlock.
+    if(myproc() && myproc()->state == RUNNING &&
+            tf->trapno == T_IRQ0+IRQ_TIMER)
+        yield();
+#endif
+
+    // Check if the process has been killed since we yielded
+    if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)
+        exit();
+#endif
 }

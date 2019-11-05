@@ -14,27 +14,39 @@ extern char end[]; // first address after kernel loaded from ELF file
 // Bootstrap processor starts running C code here.
 // Allocate a real stack and switch to it, first
 // doing some setup required for memory allocator to work.
-int
-main(void)
-{
-  kinit1(end, P2V(4*1024*1024)); // phys page allocator
-  kvmalloc();      // kernel page table
-  mpinit();        // detect other processors
-  lapicinit();     // interrupt controller
-  seginit();       // segment descriptors
-  picinit();       // disable pic
-  ioapicinit();    // another interrupt controller
-  consoleinit();   // console hardware
-  uartinit();      // serial port
-  pinit();         // process table
-  tvinit();        // trap vectors
-  binit();         // buffer cache
-  fileinit();      // file table
-  ideinit();       // disk 
-  startothers();   // start other processors
-  kinit2(P2V(4*1024*1024), P2V(PHYSTOP)); // must come after startothers()
-  userinit();      // first user process
-  mpmain();        // finish this processor's setup
+int main(void) {
+    /*
+    volatile int v = 0;
+    for(int i = 0; i < 1000000000; i++)
+        v++;
+    */
+
+    for(int i = 0; i < NQUE; i++) {
+        mlfq[i].beg = 0;
+        mlfq[i].end = -1;
+        
+        for(int j = 0; j < QLIMIT; j++)
+            mlfq[i].q[j] = 0;
+    }
+
+    kinit1(end, P2V(4*1024*1024)); // phys page allocator
+    kvmalloc();      // kernel page table
+    mpinit();        // detect other processors
+    lapicinit();     // interrupt controller
+    seginit();       // segment descriptors
+    picinit();       // disable pic
+    ioapicinit();    // another interrupt controller
+    consoleinit();   // console hardware
+    uartinit();      // serial port
+    pinit();         // process table
+    tvinit();        // trap vectors
+    binit();         // buffer cache
+    fileinit();      // file table
+    ideinit();       // disk 
+    startothers();   // start other processors
+    kinit2(P2V(4*1024*1024), P2V(PHYSTOP)); // must come after startothers()
+    userinit();      // first user process
+    mpmain();        // finish this processor's setup
 }
 
 // Other CPUs jump here from entryother.S.

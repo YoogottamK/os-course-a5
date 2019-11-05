@@ -94,9 +94,9 @@ found:
     p->priority = 60;
     p->nExec = 0;
     p->queue = -1;
+    p->qEnterTime = -1;
     for(int i = 0; i < NQUE; i++) p->ticksGiven[i] = -1;
 #ifdef MLFQ
-    p->queue = 0;
     for(int i = 0; i < NQUE; i++) p->ticksGiven[i] = 0;
 #endif
 
@@ -505,40 +505,35 @@ void scheduler(void) {
         }
 #else
 #ifdef MLFQ
-        struct proc * minPriorityProc = 0;
         for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-            if(p->state == RUNNABLE) {
-                if(!minPriorityProc) {
-                    minPriorityProc = p;
+            if(p->state == RUNNABLE && p->queue < 0) {
+                append(&mlfq[0], p);
+                p->queue = 0;
+                p->qEnterTime = ticks;
+            }
+        }
+
+        struct proc * selectedProc = 0;
+        for(int q = 0; q < NQUE; q++) {
+            if(size(&mlfq[q])) {
+                selectedProc = mlfq[q].q[mlfq[q].beg];
+
+                if(!selectedProc) continue;
+
+                if(selectedProc->state == RUNNABLE) {
+                    cprintf("Sending %s from q %d, state %d\n", selectedProc->name, q);
+                    break;
                 } else {
-                    if((p->priority < minPriorityProc->priority) ||
-                            (p->priority <= minPriorityProc->priority &&
-                                p->nExec <= minPriorityProc->nExec))
-                        minPriorityProc = p;
+                    append(&mlfq[q], delete(&mlfq[q]));
                 }
             }
         }
 
-        // it might happen that it found no such process
-        // qemu did weird stuff without this if condition
-        if (minPriorityProc) {
-            minPriorityProc->nExec++;
-            int q = minPriorityProc->queue;
-            int t = minPriorityProc->ticksGiven[q];
-            minPriorityProc->ticksGiven[q]++;
-
-            if(t == (1 << q)) {
-                if(q < NQUE) {
-                    minPriorityProc->ticksGiven[q] = minPriorityProc->ticksGiven[q+1] = 0;
-
-                    minPriorityProc->queue = (++minPriorityProc->priority);
-                } else {
-                    minPriorityProc->ticksGiven[q] = minPriorityProc->ticksGiven[0] = 0;
-                    minPriorityProc->queue = minPriorityProc->priority = 0;
-                }
-            }
-
-            p = minPriorityProc;
+        if(selectedProc && selectedProc->state == RUNNABLE) {
+            cprintf("[cpu%d] Scheduling %d in queue %d\n",
+                    mycpu()->apicid, selectedProc->pid, selectedProc->queue);
+            selectedProc->nExec++;
+            p = selectedProc;
             c->proc = p;
             switchuvm(p);
             p->state = RUNNING;
@@ -585,13 +580,16 @@ sched(void)
 }
 
 // Give up the CPU for one scheduling round.
-void
-yield(void)
-{
-  acquire(&ptable.lock);  //DOC: yieldlock
-  myproc()->state = RUNNABLE;
-  sched();
-  release(&ptable.lock);
+void yield(void) {
+    acquire(&ptable.lock);  //DOC: yieldlock
+    myproc()->state = RUNNABLE;
+#ifdef MLFQ
+    //int q = myproc()->queue;
+    //cprintf("[cpu%d] going to yield, q: %d\n", mycpu()->apicid, q);
+    //append(&mlfq[q], delete(&mlfq[q]));
+#endif
+    sched();
+    release(&ptable.lock);
 }
 
 // A fork child's very first scheduling by scheduler()
@@ -747,3 +745,45 @@ void updateRuntime() {
 
     release(&ptable.lock);
 }
+
+#ifdef MLFQ
+// Queue functions
+
+void append(struct Queue * que, struct proc * p) {
+    if(!que)
+        panic("NULL queue given for append\n");
+
+    if(que->end == QLIMIT)
+        panic("MLFQ queue is full!\n");
+
+    que->q[++que->end] = p;
+}
+
+struct proc * delete(struct Queue * que) {
+    if(!que)
+        panic("NULL queue given for deletion\n");
+
+    if(que->beg == que->end + 1)
+        panic("Deleting from empty MLFQ queue\n");
+
+    que->beg++;
+    return que->q[que->beg - 1];
+}
+
+int size(struct Queue * que) {
+    return que->end - que->beg + 1;
+}
+
+// aging processes
+
+void ageProcesses() {
+    for(int i = 0; i < NQUE; i++) {
+        int beg = mlfq[i].beg,
+            end = mlfq[i].end;
+
+        for(int j = beg; j <= end; j++) {
+            ;
+        }
+    }
+}
+#endif

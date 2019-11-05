@@ -54,8 +54,9 @@ struct proc {
   uint rtime;                  // Process total run time
   uint priority;               // Priority of the process
   uint nExec;                  // Number of times it has executed
-  uint queue;                  // queue number in MLFQ
+  int queue;                  // queue number in MLFQ
   uint ticksGiven[NQUE];       // ticks given to the proc in each queue
+  uint qEnterTime;             // time at which the proc entered a queue
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -66,10 +67,17 @@ struct proc {
 
 /*
  * updateRuntime
- *  This function gets called once per cpu clock tick
+ *  This function gets called once whenever ticks variable is updated
  *  process variables are updated here
  */
 void updateRuntime();
+
+/*
+ * ageProcesses
+ *  This function gets called once whenever ticks variable is updated
+ *  various processes are aged here
+ */
+void ageProcesses();
 
 /*
  * proc_stat
@@ -83,3 +91,19 @@ struct proc_stat {
     int current_queue;      // current assigned queue
     int ticks[NQUE];        // number of ticks each process has received at each of the 5 priority queue
 };
+
+#ifdef MLFQ
+struct Queue {
+    int beg;
+    int end;
+
+    // array of proc pointers in this queue
+    struct proc * q[QLIMIT];
+};
+
+struct Queue mlfq[NQUE];
+
+void append(struct Queue * que, struct proc * p);
+struct proc * delete(struct Queue * que);
+int size(struct Queue * que);
+#endif
