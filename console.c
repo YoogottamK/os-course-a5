@@ -103,24 +103,24 @@ cprintf(char *fmt, ...)
     release(&cons.lock);
 }
 
-void
-panic(char *s)
-{
-  int i;
-  uint pcs[10];
+void panic(char *s) {
+    int i;
+    uint pcs[10];
 
-  cli();
-  cons.locking = 0;
-  // use lapiccpunum so that we can call panic from mycpu()
-  cprintf("lapicid %d: panic: ", lapicid());
-  cprintf(s);
-  cprintf("\n");
-  getcallerpcs(&s, pcs);
-  for(i=0; i<10; i++)
-    cprintf(" %p", pcs[i]);
-  panicked = 1; // freeze other CPU
-  for(;;)
-    ;
+    procdump();
+
+    cli();
+    cons.locking = 0;
+    // use lapiccpunum so that we can call panic from mycpu()
+    cprintf("lapicid %d: panic: ", lapicid());
+    cprintf(s);
+    cprintf("\n");
+    getcallerpcs(&s, pcs);
+    for(i=0; i<10; i++)
+        cprintf(" %p", pcs[i]);
+    panicked = 1; // freeze other CPU
+    for(;;)
+        ;
 }
 
 //PAGEBREAK: 50

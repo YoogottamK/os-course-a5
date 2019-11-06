@@ -519,14 +519,16 @@ void scheduler(void) {
                 if(selectedProc->state == RUNNABLE) {
                     break;
                 } else {
-                    append(&mlfq[q], delete(&mlfq[q]));
+                    delete(&mlfq[q], 0);
                 }
             }
         }
 
         if(selectedProc && selectedProc->state == RUNNABLE) {
+            /*
             cprintf("[cpu%d] Scheduling %d in queue %d\n",
                     mycpu()->apicid, selectedProc->pid, selectedProc->queue);
+            */
             selectedProc->nExec++;
             p = selectedProc;
             c->proc = p;
@@ -536,7 +538,7 @@ void scheduler(void) {
             swtch(&(c->scheduler), p->context);
 
             if(p->state == SLEEPING)
-                append(&mlfq[p->queue], delete(&mlfq[p->queue]));
+                append(&mlfq[p->queue], delete(&mlfq[p->queue], 1));
 
             switchkvm();
 
@@ -649,14 +651,19 @@ sleep(void *chan, struct spinlock *lk)
 //PAGEBREAK!
 // Wake up all processes sleeping on chan.
 // The ptable lock must be held.
-static void
-wakeup1(void *chan)
-{
-  struct proc *p;
+static void wakeup1(void *chan) {
+    struct proc *p;
 
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == SLEEPING && p->chan == chan)
-      p->state = RUNNABLE;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if(p->state == SLEEPING && p->chan == chan) {
+            p->state = RUNNABLE;
+#ifdef MLFQ
+            int oldQ = p->queue;
+            p->qEnterTime = ticks;
+            append(&mlfq[oldQ], p);
+#endif
+        }
+    }
 }
 
 // Wake up all processes sleeping on chan.
@@ -771,9 +778,22 @@ void append(struct Queue * que, struct proc * p) {
     if(!que)
         panic("NULL queue given for append\n");
 
+    if(!p)
+        panic("NULL proc pointer given for append\n");
+
     if((que->beg == 0 && que->end == QLIMIT -1) &&
-            (que->end + 1 == que->beg))
-        panic("Appending to full queue :(\n");
+            (que->end + 1 == que->beg)) {
+        procdump();
+        panic("Appending to full queue\n");
+    }
+
+    if(que->beg > 0) {
+        for(int i = que->beg; i != (que->end + 1) % QLIMIT; i++, i %= QLIMIT) {
+            if(que->q[i] && que->q[i]->pid == p->pid)
+                return;
+        }
+    }
+
 
     if(que->beg == -1) {
         que->beg = que->end = 0;
@@ -789,14 +809,16 @@ void append(struct Queue * que, struct proc * p) {
     //cprintf("Going to leave append function\n");
 }
 
-struct proc * delete(struct Queue * que) {
-    //cprintf("Going to delete\n");
+struct proc * delete(struct Queue * que, int id) {
+    //cprintf("Going to delete\n", id);
 
     if(!que)
         panic("NULL queue given for deletion\n");
 
-    if(que->beg == -1)
+    if(que->beg == -1) {
+        cprintf("ID: %d\n", id);
         panic("Deleting from empty MLFQ queue\n");
+    }
 
     struct proc * ret = que->q[que->beg];
 
@@ -813,28 +835,78 @@ struct proc * delete(struct Queue * que) {
 }
 
 int size(struct Queue * que) {
+    int ret;
+
     if(!que)
         panic("NULL queue given for getting size\n");
 
     if(que->beg == -1)
         return 0;
 
-    if(que->end >= que->beg)
-        return 1 + que->end - que->beg;
+    if(que->end >= que->beg) {
+        ret = 1 + que->end - que->beg;
 
-    return QLIMIT - que->beg + que->end;
+        if(ret < 0)
+            panic("returning size of queue < 0\n");
+
+        return ret;
+    }
+
+    ret = QLIMIT - que->beg + que->end;
+    return ret;
 }
 
-// aging processes
+struct proc * deleteIdx(struct Queue * que, int idx) {
+    if(idx < que->beg || idx > que->end) {
+        cprintf("b: %d i: %d e: %d\n", que->beg, idx, que->end);
+        panic("Invalid delete index");
+    }
+
+    struct proc * ret = que->q[idx];
+
+    for(int i = idx; i != (que->end + 1) % QLIMIT; i = (i + 1) % QLIMIT) {
+        que->q[i] = que->q[(i + 1) % QLIMIT];
+    }
+
+    if(que->end == 0)
+        que->end = QLIMIT - 1;
+    else
+        que->end--;
+
+    return ret;
+}
+
+int getIndex(struct Queue *que, struct proc *p) {
+    for(int i = que->beg; i != (que->end + 1) % QLIMIT; i = (i + 1) % QLIMIT) {
+        if(que->q[i]->pid == p->pid)
+            return i;
+    }
+
+    panic("Invalid process sent for retrieving index\n");
+    return -1;
+}
 
 void ageProcesses() {
-    for(int i = 0; i < NQUE; i++) {
-        int beg = mlfq[i].beg,
-            end = mlfq[i].end;
+    for(int q = 0; q < NQUE; q++) {
+        if(size(&mlfq[q])) {
+            struct Queue * que = &mlfq[q];
 
-        for(int j = beg; j <= end; j++) {
-            ;
+            for(int i = que->beg; i != (que->end + 1) % QLIMIT; i++, i %= QLIMIT) {
+                if(que->q[i] && ticks - que->q[i]->qEnterTime > OLDAGE) {
+                    int oldQ = que->q[i]->queue;
+                    int nextQ = oldQ ? oldQ - 1 : 0;
+
+                    if(oldQ < 0 || nextQ < 0)
+                        continue;
+
+                    cprintf("Aging process (%s)%d from %d to %d\n", que->q[i]->name, que->q[i]->pid, oldQ, nextQ);
+                    append(&mlfq[nextQ], deleteIdx(&mlfq[oldQ], i));
+                    que->q[i]->queue = nextQ;
+                    que->q[i]->qEnterTime = ticks;
+                }
+            }
         }
     }
 }
+
 #endif

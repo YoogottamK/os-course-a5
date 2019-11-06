@@ -46,10 +46,14 @@ void trap(struct trapframe *tf) {
 
     switch(tf->trapno){
         case T_IRQ0 + IRQ_TIMER:
-            if(cpuid() == 0){
+            if(cpuid() == 0) {
                 acquire(&tickslock);
                 ticks++;
                 updateRuntime();
+#ifdef MLFQ
+                ageProcesses();
+#endif
+                //cprintf("Entered after aging\n");
                 wakeup(&ticks);
                 release(&tickslock);
             }
@@ -101,19 +105,22 @@ void trap(struct trapframe *tf) {
 
 #ifdef MLFQ
     struct proc * p = myproc();
-    if(p && (ticks - p->qEnterTime == (1 << p->queue))
-            && tf->trapno == T_IRQ0 + IRQ_TIMER) {
-        yield();
-        p->ticksGiven[p->queue] = ticks - p->qEnterTime;
+    if(p && tf->trapno == T_IRQ0 + IRQ_TIMER && p->state == RUNNING) {
+        p->ticksGiven[p->queue]++;
 
-        int nextQ = p->queue == NQUE - 1 ? NQUE - 1 : p->queue + 1;
-        cprintf("[cpu%d] Kicking out %d from queue %d to %d\n", mycpu()->apicid, p->pid, p->queue, nextQ);
-        append(&mlfq[nextQ], delete(&mlfq[p->queue]));
-        p->queue = nextQ;
-        p->qEnterTime = ticks;
+        if(ticks - p->qEnterTime >= (1 << p->queue)) {
+            yield();
+            int nextQ = p->queue == NQUE - 1 ? NQUE - 1 : p->queue + 1;
+            /*
+               cprintf("[cpu%d] Kicking out %d from queue %d to %d ticksGiven = %d\n",
+               mycpu()->apicid, p->pid, p->queue, nextQ, p->ticksGiven[p->queue]);
+               */
+            //cprintf("Going to delete from trap %d\n", p->queue);
+            append(&mlfq[nextQ], delete(&mlfq[p->queue], 2));
+            p->queue = nextQ;
+            p->qEnterTime = ticks;
+        }
     }
-
-    ageProcesses();
 #endif
 
     // in FCFS, we don't force the process to give

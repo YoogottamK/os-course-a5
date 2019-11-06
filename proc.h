@@ -104,6 +104,8 @@ struct Queue {
 struct Queue mlfq[NQUE];
 
 void append(struct Queue * que, struct proc * p);
-struct proc * delete(struct Queue * que);
+struct proc * delete(struct Queue * que, int id);
+struct proc * deleteIdx(struct Queue * que, int idx);
+int getIndex(struct Queue * que, struct proc * p);
 int size(struct Queue * que);
 #endif

@@ -112,7 +112,7 @@ int sys_set_priority(void) {
 int sys_getpinfo(void) {
     struct proc_stat * p;
 
-    if(argptr(0, (void*)&p, sizeof(p)))
+    if(argptr(0, (void*)&p, sizeof(p)) < 0)
         return -1;
 
     return getpinfo(p);
