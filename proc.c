@@ -742,7 +742,7 @@ void procdump(void) {
         int beg = mlfq[q].beg,
             end = mlfq[q].end;
 
-        cprintf("Queue %d(%d -> %d): ", q, beg, end);
+        cprintf("Queue %d(%d -> %d)[%d]: ", q, beg, end, size(&mlfq[q]));
 
         if(!size(&mlfq[q])) {
             cprintf("empty\n");
@@ -772,6 +772,15 @@ void updateRuntime() {
 #ifdef MLFQ
 // Queue functions
 
+int getEnd(struct Queue * q) {
+    int end = q->end + 1;
+
+    if(end >= QLIMIT)
+        end -= QLIMIT;
+
+    return end;
+}
+
 void append(struct Queue * que, struct proc * p) {
     //cprintf("Going to append to queue %d\n", p->queue);
 
@@ -783,17 +792,16 @@ void append(struct Queue * que, struct proc * p) {
 
     if((que->beg == 0 && que->end == QLIMIT -1) &&
             (que->end + 1 == que->beg)) {
-        procdump();
         panic("Appending to full queue\n");
     }
 
     if(que->beg > 0) {
-        for(int i = que->beg; i != (que->end + 1) % QLIMIT; i++, i %= QLIMIT) {
-            if(que->q[i] && que->q[i]->pid == p->pid)
+        for(int i = que->beg; i != getEnd(que); i++, i %= QLIMIT) {
+            if(que->q[i] && que->q[i]->pid == p->pid) {
                 return;
+            }
         }
     }
-
 
     if(que->beg == -1) {
         que->beg = que->end = 0;
@@ -857,6 +865,8 @@ int size(struct Queue * que) {
 }
 
 struct proc * deleteIdx(struct Queue * que, int idx) {
+    //cprintf("Entering deleteIdx\n");
+
     if(idx < que->beg || idx > que->end) {
         cprintf("b: %d i: %d e: %d\n", que->beg, idx, que->end);
         panic("Invalid delete index");
@@ -864,8 +874,13 @@ struct proc * deleteIdx(struct Queue * que, int idx) {
 
     struct proc * ret = que->q[idx];
 
-    for(int i = idx; i != (que->end + 1) % QLIMIT; i = (i + 1) % QLIMIT) {
-        que->q[i] = que->q[(i + 1) % QLIMIT];
+    for(int i = idx; i != getEnd(que); i++, i %= QLIMIT) {
+        int j = i + 1;
+
+        if(j >= QLIMIT)
+            j -= QLIMIT;
+
+        que->q[i] = que->q[j];
     }
 
     if(que->end == 0)
@@ -873,11 +888,12 @@ struct proc * deleteIdx(struct Queue * que, int idx) {
     else
         que->end--;
 
+    //cprintf("Quitting deleteIdx\n");
     return ret;
 }
 
 int getIndex(struct Queue *que, struct proc *p) {
-    for(int i = que->beg; i != (que->end + 1) % QLIMIT; i = (i + 1) % QLIMIT) {
+    for(int i = que->beg; i != getEnd(que); i = (i + 1) % QLIMIT) {
         if(que->q[i]->pid == p->pid)
             return i;
     }
@@ -891,7 +907,7 @@ void ageProcesses() {
         if(size(&mlfq[q])) {
             struct Queue * que = &mlfq[q];
 
-            for(int i = que->beg; i != (que->end + 1) % QLIMIT; i++, i %= QLIMIT) {
+            for(int i = que->beg; i != getEnd(&mlfq[q]); i++, i %= QLIMIT) {
                 if(que->q[i] && ticks - que->q[i]->qEnterTime > OLDAGE) {
                     int oldQ = que->q[i]->queue;
                     int nextQ = oldQ ? oldQ - 1 : 0;
@@ -899,10 +915,14 @@ void ageProcesses() {
                     if(oldQ < 0 || nextQ < 0)
                         continue;
 
-                    cprintf("Aging process (%s)%d from %d to %d\n", que->q[i]->name, que->q[i]->pid, oldQ, nextQ);
-                    append(&mlfq[nextQ], deleteIdx(&mlfq[oldQ], i));
-                    que->q[i]->queue = nextQ;
-                    que->q[i]->qEnterTime = ticks;
+                    cprintf("Aging process (%s)%d from %d to %d\n",
+                            que->q[i]->name, que->q[i]->pid, oldQ, nextQ);
+
+                    struct proc * deleted = deleteIdx(&mlfq[oldQ], i);
+                    deleted->qEnterTime = ticks;
+                    deleted->queue = nextQ;
+
+                    append(&mlfq[nextQ], deleted);
                 }
             }
         }

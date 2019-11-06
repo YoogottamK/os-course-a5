@@ -13,5 +13,5 @@
 #define FSSIZE       1000  // size of file system in blocks
 #define NQUE         5  // number of queues in MLFQ
 #define QLIMIT       NPROC * 10
-#define OLDAGE       10
+#define OLDAGE       100
 // TODO: correct these comments
