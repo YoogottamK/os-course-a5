@@ -525,10 +525,8 @@ void scheduler(void) {
         }
 
         if(selectedProc && selectedProc->state == RUNNABLE) {
-            /*
-            cprintf("[cpu%d] Scheduling %d in queue %d\n",
+            cprintf("Scheduling %d in queue %d\n",
                     mycpu()->apicid, selectedProc->pid, selectedProc->queue);
-            */
             selectedProc->nExec++;
             p = selectedProc;
             c->proc = p;
@@ -678,24 +676,28 @@ wakeup(void *chan)
 // Kill the process with the given pid.
 // Process won't exit until it returns
 // to user space (see trap in trap.c).
-int
-kill(int pid)
-{
-  struct proc *p;
+int kill(int pid) {
+    struct proc *p;
 
-  acquire(&ptable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->pid == pid){
-      p->killed = 1;
-      // Wake process from sleep if necessary.
-      if(p->state == SLEEPING)
-        p->state = RUNNABLE;
-      release(&ptable.lock);
-      return 0;
+    acquire(&ptable.lock);
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->pid == pid){
+            p->killed = 1;
+            // Wake process from sleep if necessary.
+            if(p->state == SLEEPING) {
+                p->state = RUNNABLE;
+#ifdef MLFQ
+                int oldQ = p->queue;
+                p->qEnterTime = ticks;
+                append(&mlfq[oldQ], p);
+#endif
+            }
+            release(&ptable.lock);
+            return 0;
+        }
     }
-  }
-  release(&ptable.lock);
-  return -1;
+    release(&ptable.lock);
+    return -1;
 }
 
 //PAGEBREAK: 36
@@ -883,10 +885,13 @@ struct proc * deleteIdx(struct Queue * que, int idx) {
         que->q[i] = que->q[j];
     }
 
-    if(que->end == 0)
+    if(que->beg == que->end) {
+        que->beg = que->end = -1;
+    } else if(que->end == 0 && que->beg > que->end) {
         que->end = QLIMIT - 1;
-    else
+    } else {
         que->end--;
+    }
 
     //cprintf("Quitting deleteIdx\n");
     return ret;
@@ -915,10 +920,8 @@ void ageProcesses() {
                     if(oldQ < 0 || nextQ < 0)
                         continue;
 
-                    /*
                     cprintf("Aging process (%s)%d from %d to %d\n",
                             que->q[i]->name, que->q[i]->pid, oldQ, nextQ);
-                    */
 
                     struct proc * deleted = deleteIdx(&mlfq[oldQ], i);
                     deleted->qEnterTime = ticks;

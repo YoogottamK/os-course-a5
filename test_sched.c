@@ -3,7 +3,7 @@
 #include "user.h"
 #include "fcntl.h"
 
-#define NFORK 20
+#define NFORK 10
 
 char * argv[] = { "long_wait" , 0 };
 

@@ -4,18 +4,20 @@
 #include "fcntl.h"
 
 int main() {
-    int id = getpid();
+    volatile int id = getpid();
 
 #ifdef PBS
     set_priority(100 - id);
 #endif
 
     for(int i = 0; i < 10; i++) {
+#ifndef MLFQ
         printf(1, "pid: %d    %d\n", id, i);
+#endif
 
-        for(volatile int j = 0; j < 5000000; j++) {
-            j += 1;
-            j -= 1;
+        for(int j = 0; j < 5000000; j++) {
+            id = id + 1;
+            id = id - 1;
         }
     }
 
