@@ -18,6 +18,8 @@ GRAPH_DATA = {}
 #ignore = [ "0", "1", "2", "3" ]
 ignore = [ "0" ]
 
+marks = [ ".", ",", "o", "v", "^", "<", ">", "8", "s", "p", "P", "*", "h", "H", "+", "x", "X", "D", "d" ]
+
 re_ticks = re.compile(r"\[([^]]*)\]")
 re_pid = re.compile(r"\{([^]]*)\}")
 re_srcq = re.compile(r"\=([^]]*)\=")
@@ -46,8 +48,10 @@ for pid in GRAPH_DATA:
     for i in range(len(GRAPH_DATA[pid]["x"])):
         GRAPH_DATA[pid]["x"][i] -= min_ticks
 
+i = 0
 for pid in GRAPH_DATA:
-    plt.plot(GRAPH_DATA[pid]["x"], GRAPH_DATA[pid]["y"], label=pid)
+    i += 1
+    plt.plot(GRAPH_DATA[pid]["x"], GRAPH_DATA[pid]["y"], label=pid, marker=marks[i])
 
 plt.legend()
 plt.show()
