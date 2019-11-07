@@ -15,7 +15,8 @@ inp = LOGS.strip().split("\n")
 
 GRAPH_DATA = {}
 
-ignore = [ "0", "1", "2", "3" ]
+#ignore = [ "0", "1", "2", "3" ]
+ignore = [ "0" ]
 
 re_ticks = re.compile(r"\[([^]]*)\]")
 re_pid = re.compile(r"\{([^]]*)\}")
