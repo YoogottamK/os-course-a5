@@ -1,0 +1,209 @@
+[545] Scheduling {2} in queue _1_
+[546] Scheduling {2} in queue _1_
+[546] Kicking {2} from queue =1= to _2_
+[546] Scheduling {3} in queue _0_
+[547] Scheduling {3} in queue _0_
+[547] Kicking {3} from queue =0= to _1_
+[547] Scheduling {3} in queue _1_
+[548] Scheduling {3} in queue _1_
+[548] Scheduling {3} in queue _1_
+[548] Scheduling {3} in queue _1_
+[549] Scheduling {3} in queue _1_
+[549] Scheduling {3} in queue _1_
+[551] Scheduling {4} in queue _0_
+[551] Scheduling {4} in queue _0_
+[552] Scheduling {4} in queue _0_
+[552] Kicking {4} from queue =0= to _1_
+[552] Scheduling {3} in queue _1_
+[552] Kicking {3} from queue =1= to _2_
+[555] Scheduling {5} in queue _0_
+[555] Scheduling {6} in queue _0_
+[555] Scheduling {7} in queue _0_
+[555] Scheduling {8} in queue _0_
+[556] Scheduling {8} in queue _0_
+[556] Kicking {8} from queue =0= to _1_
+[556] Scheduling {4} in queue _1_
+[556] Scheduling {4} in queue _1_
+[556] Scheduling {4} in queue _1_
+[556] Scheduling {4} in queue _1_
+[557] Scheduling {4} in queue _1_
+[559] Scheduling {5} in queue _0_
+[560] Scheduling {5} in queue _0_
+[560] Kicking {5} from queue =0= to _1_
+[562] Scheduling {6} in queue _0_
+[563] Scheduling {6} in queue _0_
+[563] Kicking {6} from queue =0= to _1_
+[565] Scheduling {7} in queue _0_
+[566] Scheduling {7} in queue _0_
+[566] Kicking {7} from queue =0= to _1_
+[568] Scheduling {4} in queue _1_
+[568] Kicking {4} from queue =1= to _2_
+[572] Scheduling {4} in queue _2_
+[572] Kicking {4} from queue =2= to _3_
+[580] Scheduling {4} in queue _3_
+[580] Kicking {4} from queue =3= to _4_
+[596] Scheduling {4} in queue _4_
+[596] Kicking {4} from queue =4= to _4_
+[598] Aging process {8} from =1= to _0_
+[601] Aging process {5} from =1= to _0_
+[604] Aging process {6} from =1= to _0_
+[607] Aging process {7} from =1= to _0_
+[612] Scheduling {8} in queue _0_
+[613] Scheduling {8} in queue _0_
+[613] Kicking {8} from queue =0= to _1_
+[615] Scheduling {5} in queue _0_
+[615] Kicking {5} from queue =0= to _1_
+[617] Scheduling {6} in queue _0_
+[617] Kicking {6} from queue =0= to _1_
+[619] Scheduling {7} in queue _0_
+[619] Kicking {7} from queue =0= to _1_
+[621] Scheduling {4} in queue _4_
+[621] Kicking {4} from queue =4= to _4_
+[637] Scheduling {4} in queue _4_
+[637] Kicking {4} from queue =4= to _4_
+[653] Scheduling {4} in queue _4_
+[653] Kicking {4} from queue =4= to _4_
+[654] Aging process {8} from =1= to _0_
+[656] Aging process {5} from =1= to _0_
+[658] Aging process {6} from =1= to _0_
+[660] Aging process {7} from =1= to _0_
+[669] Scheduling {8} in queue _0_
+[669] Kicking {8} from queue =0= to _1_
+[671] Scheduling {5} in queue _0_
+[671] Kicking {5} from queue =0= to _1_
+[673] Scheduling {6} in queue _0_
+[673] Kicking {6} from queue =0= to _1_
+[675] Scheduling {7} in queue _0_
+[675] Kicking {7} from queue =0= to _1_
+[677] Scheduling {4} in queue _4_
+[677] Kicking {4} from queue =4= to _4_
+[693] Scheduling {4} in queue _4_
+[693] Kicking {4} from queue =4= to _4_
+[709] Scheduling {4} in queue _4_
+[709] Kicking {4} from queue =4= to _4_
+[710] Aging process {8} from =1= to _0_
+[712] Aging process {5} from =1= to _0_
+[714] Aging process {6} from =1= to _0_
+[716] Aging process {7} from =1= to _0_
+[719] Scheduling {8} in queue _0_
+[719] Kicking {8} from queue =0= to _1_
+[721] Scheduling {5} in queue _0_
+[721] Kicking {5} from queue =0= to _1_
+[723] Scheduling {6} in queue _0_
+[723] Kicking {6} from queue =0= to _1_
+[725] Scheduling {7} in queue _0_
+[725] Kicking {7} from queue =0= to _1_
+[727] Scheduling {3} in queue _2_
+[727] Scheduling {8} in queue _1_
+[727] Kicking {8} from queue =1= to _2_
+[731] Scheduling {5} in queue _1_
+[731] Kicking {5} from queue =1= to _2_
+[735] Scheduling {6} in queue _1_
+[735] Kicking {6} from queue =1= to _2_
+[739] Scheduling {7} in queue _1_
+[739] Kicking {7} from queue =1= to _2_
+[743] Scheduling {8} in queue _2_
+[743] Kicking {8} from queue =2= to _3_
+[751] Scheduling {5} in queue _2_
+[751] Kicking {5} from queue =2= to _3_
+[759] Scheduling {6} in queue _2_
+[759] Kicking {6} from queue =2= to _3_
+[767] Scheduling {7} in queue _2_
+[767] Kicking {7} from queue =2= to _3_
+[775] Scheduling {8} in queue _3_
+[775] Kicking {8} from queue =3= to _4_
+[791] Scheduling {5} in queue _3_
+[791] Kicking {5} from queue =3= to _4_
+[800] Aging process {6} from =3= to _2_
+[807] Scheduling {6} in queue _2_
+[807] Kicking {6} from queue =2= to _3_
+[808] Aging process {7} from =3= to _2_
+[815] Scheduling {7} in queue _2_
+[815] Kicking {7} from queue =2= to _3_
+[816] Aging process {8} from =4= to _3_
+[823] Scheduling {6} in queue _3_
+[823] Kicking {6} from queue =3= to _4_
+[832] Aging process {5} from =4= to _3_
+[839] Scheduling {7} in queue _3_
+[839] Kicking {7} from queue =3= to _4_
+[855] Scheduling {8} in queue _3_
+[855] Kicking {8} from queue =3= to _4_
+[864] Aging process {6} from =4= to _3_
+[871] Scheduling {5} in queue _3_
+[871] Kicking {5} from queue =3= to _4_
+[880] Aging process {7} from =4= to _3_
+[887] Scheduling {6} in queue _3_
+[887] Kicking {6} from queue =3= to _4_
+[896] Aging process {8} from =4= to _3_
+[903] Scheduling {7} in queue _3_
+[903] Kicking {7} from queue =3= to _4_
+[912] Aging process {5} from =4= to _3_
+[919] Scheduling {8} in queue _3_
+[919] Kicking {8} from queue =3= to _4_
+[928] Aging process {6} from =4= to _3_
+[935] Scheduling {5} in queue _3_
+[935] Kicking {5} from queue =3= to _4_
+[944] Aging process {7} from =4= to _3_
+[951] Scheduling {6} in queue _3_
+[951] Kicking {6} from queue =3= to _4_
+[960] Aging process {8} from =4= to _3_
+[967] Scheduling {7} in queue _3_
+[967] Kicking {7} from queue =3= to _4_
+[976] Aging process {5} from =4= to _3_
+[983] Scheduling {8} in queue _3_
+[983] Kicking {8} from queue =3= to _4_
+[992] Aging process {6} from =4= to _3_
+[999] Scheduling {5} in queue _3_
+[999] Kicking {5} from queue =3= to _4_
+[1008] Aging process {7} from =4= to _3_
+[1015] Scheduling {6} in queue _3_
+[1015] Kicking {6} from queue =3= to _4_
+[1024] Aging process {8} from =4= to _3_
+[1031] Scheduling {7} in queue _3_
+[1031] Kicking {7} from queue =3= to _4_
+[1040] Aging process {5} from =4= to _3_
+[1047] Scheduling {8} in queue _3_
+[1047] Kicking {8} from queue =3= to _4_
+[1056] Aging process {6} from =4= to _3_
+[1063] Scheduling {5} in queue _3_
+[1063] Kicking {5} from queue =3= to _4_
+[1072] Aging process {7} from =4= to _3_
+[1079] Scheduling {6} in queue _3_
+[1079] Kicking {6} from queue =3= to _4_
+[1088] Aging process {8} from =4= to _3_
+[1095] Scheduling {7} in queue _3_
+[1095] Kicking {7} from queue =3= to _4_
+[1104] Aging process {5} from =4= to _3_
+[1111] Scheduling {8} in queue _3_
+[1111] Kicking {8} from queue =3= to _4_
+[1120] Aging process {6} from =4= to _3_
+[1127] Scheduling {5} in queue _3_
+[1127] Kicking {5} from queue =3= to _4_
+[1136] Aging process {7} from =4= to _3_
+[1143] Scheduling {6} in queue _3_
+[1143] Kicking {6} from queue =3= to _4_
+[1152] Aging process {8} from =4= to _3_
+[1159] Scheduling {7} in queue _3_
+[1159] Kicking {7} from queue =3= to _4_
+[1168] Aging process {5} from =4= to _3_
+[1175] Scheduling {8} in queue _3_
+[1175] Kicking {8} from queue =3= to _4_
+[1184] Aging process {6} from =4= to _3_
+[1191] Scheduling {5} in queue _3_
+[1191] Kicking {5} from queue =3= to _4_
+[1200] Aging process {7} from =4= to _3_
+[1207] Scheduling {6} in queue _3_
+[1207] Kicking {6} from queue =3= to _4_
+[1216] Aging process {8} from =4= to _3_
+[1219] Scheduling {3} in queue _2_
+[1219] Scheduling {7} in queue _3_
+[1219] Kicking {7} from queue =3= to _4_
+[1231] Scheduling {3} in queue _2_
+[1231] Scheduling {8} in queue _3_
+[1231] Kicking {8} from queue =3= to _4_
+[1232] Aging process {5} from =4= to _3_
+[1237] Scheduling {3} in queue _2_
+[1237] Scheduling {5} in queue _3_
+[1237] Kicking {5} from queue =3= to _4_
+[1241] Scheduling {3} in queue _2_
+[1242] Scheduling {2} in queue _2_

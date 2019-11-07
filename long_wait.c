@@ -10,7 +10,7 @@ int main() {
     set_priority(100 - id);
 #endif
 
-    for(int i = 0; i < 10; i++) {
+    for(int i = 0; i < 20; i++) {
 #ifndef MLFQ
         printf(1, "pid: %d    %d\n", id, i);
 #endif
