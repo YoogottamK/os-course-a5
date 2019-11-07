@@ -915,8 +915,10 @@ void ageProcesses() {
                     if(oldQ < 0 || nextQ < 0)
                         continue;
 
+                    /*
                     cprintf("Aging process (%s)%d from %d to %d\n",
                             que->q[i]->name, que->q[i]->pid, oldQ, nextQ);
+                    */
 
                     struct proc * deleted = deleteIdx(&mlfq[oldQ], i);
                     deleted->qEnterTime = ticks;

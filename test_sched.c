@@ -3,10 +3,12 @@
 #include "user.h"
 #include "fcntl.h"
 
+#define NFORK 20
+
 char * argv[] = { "long_wait" , 0 };
 
 int main() {
-    for(int i = 0; i < 10; i++) {
+    for(int i = 0; i < NFORK; i++) {
         int f = fork();
 
         if(f < 0) {
@@ -19,7 +21,7 @@ int main() {
         }
     }
 
-    for(int i = 0; i < 10; i++)
+    for(int i = 0; i < NFORK; i++)
         wait();
 
     exit();
