@@ -3,19 +3,24 @@
 #include "user.h"
 #include "fcntl.h"
 
+#define N 5000000
+#define loop 20
+
 int main() {
     volatile int id = getpid();
 
-#ifdef PBS
-    set_priority(100 - id);
-#endif
+    for(int i = 0; i < loop; i++) {
 
-    for(int i = 0; i < 20; i++) {
 #ifndef MLFQ
         printf(1, "pid: %d    %d\n", id, i);
 #endif
 
-        for(int j = 0; j < 5000000; j++) {
+#ifdef PBS
+            if(i == loop / 2)
+                set_priority(100 - id);
+#endif
+
+        for(int j = 0; j < N; j++) {
             id = id + 1;
             id = id - 1;
         }
