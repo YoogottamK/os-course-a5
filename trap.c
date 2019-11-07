@@ -111,8 +111,8 @@ void trap(struct trapframe *tf) {
         if(ticks - p->qEnterTime >= (1 << p->queue)) {
             yield();
             int nextQ = p->queue == NQUE - 1 ? NQUE - 1 : p->queue + 1;
-               cprintf("[cpu%d] Kicking out %d from queue %d to %d ticksGiven = %d\n",
-               mycpu()->apicid, p->pid, p->queue, nextQ, p->ticksGiven[p->queue]);
+               cprintf("[%d] Kicking out %d from queue %d to %d\n",
+                       ticks, p->pid, p->queue, nextQ);
             //cprintf("Going to delete from trap %d\n", p->queue);
             struct proc * toDelete = delete(&mlfq[p->queue], 2);
             append(&mlfq[nextQ], toDelete);

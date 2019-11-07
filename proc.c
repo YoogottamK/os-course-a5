@@ -525,8 +525,8 @@ void scheduler(void) {
         }
 
         if(selectedProc && selectedProc->state == RUNNABLE) {
-            cprintf("Scheduling %d in queue %d\n",
-                    mycpu()->apicid, selectedProc->pid, selectedProc->queue);
+            cprintf("[%d] Scheduling %d in queue %d\n",
+                    ticks, selectedProc->pid, selectedProc->queue);
             selectedProc->nExec++;
             p = selectedProc;
             c->proc = p;
@@ -920,8 +920,8 @@ void ageProcesses() {
                     if(oldQ < 0 || nextQ < 0)
                         continue;
 
-                    cprintf("Aging process (%s)%d from %d to %d\n",
-                            que->q[i]->name, que->q[i]->pid, oldQ, nextQ);
+                    cprintf("[%d] Aging process (%s)%d from %d to %d\n",
+                            ticks, que->q[i]->name, que->q[i]->pid, oldQ, nextQ);
 
                     struct proc * deleted = deleteIdx(&mlfq[oldQ], i);
                     deleted->qEnterTime = ticks;
