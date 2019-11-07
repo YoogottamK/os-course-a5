@@ -2,6 +2,7 @@
 #include "stat.h"
 #include "user.h"
 #include "fcntl.h"
+#include "proc_stat.h"
 
 #define N 5000000
 #define loop 20
@@ -11,9 +12,7 @@ int main() {
 
     for(int i = 0; i < loop; i++) {
 
-#ifndef MLFQ
         printf(1, "pid: %d    %d\n", id, i);
-#endif
 
 #ifdef PBS
             if(i == loop / 2)
@@ -25,6 +24,14 @@ int main() {
             id = id - 1;
         }
     }
+
+    struct proc_stat p;
+    getpinfo(&p);
+
+    printf(1, "%d %d %d %d ", p.pid, p.runtime, p.num_run, p.current_queue);
+    for(int i = 0; i < NQUE; i++)
+        printf(1, "%d ", p.ticks[i]);
+    printf(1, "\n");
 
     exit();
 }

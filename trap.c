@@ -8,6 +8,8 @@
 #include "traps.h"
 #include "spinlock.h"
 
+#define LOGS 0
+
 // Interrupt descriptor table (shared by all CPUs).
 struct gatedesc idt[256];
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
@@ -111,8 +113,10 @@ void trap(struct trapframe *tf) {
         if(ticks - p->qEnterTime >= (1 << p->queue)) {
             yield();
             int nextQ = p->queue == NQUE - 1 ? NQUE - 1 : p->queue + 1;
+#if LOGS
                cprintf("[%d] Kicking {%d} from queue =%d= to _%d_\n",
                        ticks, p->pid, p->queue, nextQ);
+#endif
             //cprintf("Going to delete from trap %d\n", p->queue);
             struct proc * toDelete = delete(&mlfq[p->queue], 2);
             append(&mlfq[nextQ], toDelete);

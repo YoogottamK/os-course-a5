@@ -7,6 +7,8 @@
 #include "proc.h"
 #include "spinlock.h"
 
+#define LOGS 0
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -525,8 +527,11 @@ void scheduler(void) {
         }
 
         if(selectedProc && selectedProc->state == RUNNABLE) {
+
+#if LOGS
             cprintf("[%d] Scheduling {%d} in queue _%d_\n",
                     ticks, selectedProc->pid, selectedProc->queue);
+#endif
             selectedProc->nExec++;
             p = selectedProc;
             c->proc = p;
@@ -920,8 +925,10 @@ void ageProcesses() {
                     if(oldQ < 0 || nextQ < 0)
                         continue;
 
+#if LOGS
                     cprintf("[%d] Aging process {%d} from =%d= to _%d_\n",
                             ticks, que->q[i]->pid, oldQ, nextQ);
+#endif
 
                     struct proc * deleted = deleteIdx(&mlfq[oldQ], i);
                     deleted->qEnterTime = ticks;
